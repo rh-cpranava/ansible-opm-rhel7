@@ -32,7 +32,7 @@
       tags:
         - prune
 - name: Push the index container to mirror registry
-  hosts: "{{ remote_host }}"
+  hosts: localhost
   become: yes
   vars_files:
      - vars.yml
@@ -82,7 +82,7 @@
     - name: Save the mirror catalog image in tar file
       command: "podman save -o {{ mirror_dest }}/index-operator.tar {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
 - name: Copy the file to remote host and load the catalog
-  hosts: localhost
+  hosts: "{{ remote_host }}"
   vars_files:
      - vars.yml
   tasks:
