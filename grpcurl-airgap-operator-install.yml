@@ -1,0 +1,15 @@
+---
+- name: Ansible Playbook to run grpcurl 
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Run the index image
+      containers.podman.podman_container:
+        name: operator-index
+        image: registry.redhat.io/redhat/redhat-operator-index:v4.7
+        state: started
+        ports:
+           - "50051:50051"
+        detach: yes
+    - name: Fetch the value of grpcurl and store in file
+      shell: "grpcurl -plaintext localhost:50051 api.Registry/ListPackages > packages.out" 

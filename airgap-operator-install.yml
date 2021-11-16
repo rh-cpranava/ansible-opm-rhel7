@@ -1,0 +1,100 @@
+---
+- name: Ansible Playbook to automate installation and updation of operators on OCP
+  hosts: localhost
+  become: yes
+  vars_files:
+     - vars.yml
+  tasks:
+    - name: Unset env variable
+      shell: "unset http_proxy; unset https_proxy;"
+    - name: Run the index image
+      containers.podman.podman_container:
+        name: operator-index
+        image: "{{ index_image }}:v{{ ocp_version }}"
+        state: started
+        ports:
+           - "50051:50051"
+        detach: yes
+    - name: Copy the index database inside the container
+      shell: podman exec -it operator-index cp /database/index.db /registry/index.db 
+      tags:
+        - prune
+    - name: Prune the database
+      command: "podman exec -it operator-index opm registry prune -p {{ var_prune }} --database /registry/index.db"
+      tags:
+        - prune
+    - name: Copy the index database inside the container
+      shell: "podman cp operator-index:/registry/index.db ."
+      tags:
+        - prune
+    - name: Copy the index database inside the container
+      shell: "podman cp index.db operator-index:/database/index.db"
+      tags:
+        - prune
+- name: Push the index container to mirror registry
+  hosts: localhost
+  become: yes
+  vars_files:
+     - vars.yml
+  tasks:
+    - name: Generate the new image starting from the modified container
+      command: "podman commit operator-index {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+      when: ocp_version != 4.6
+      tags:
+        - push
+    - name: Generate the new image starting from the modified container (4.6)
+      command: "podman commit -f docker operator-index {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+      when: ocp_version == 4.6
+      tags:
+        - push
+    - name: Push the new index image in local registry
+      command: "podman push {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+      tags:
+        - push
+- name: Mirror the catalog into the disk
+  hosts: localhost
+  vars_files:
+     - vars.yml
+  become: yes
+  tasks:
+    - name: Create temp directory called olmmirror
+      file:
+        path: mirror/olmmirror
+        state: directory
+      tags:
+        - mirror_catalog
+    - name: Store the mirrored images into a file called mirror
+      command: oc adm catalog mirror {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }} file://mirror -a auth.json --skip-verification=false --insecure=true
+      args:
+        chdir: olmmirror/
+      tags:
+        - mirror_catalog
+    - name: Tar the file 
+      archive:
+        path: olmmirror/v2
+        dest: mirror.tgz
+      tags:
+        - mirror_catalog
+- name: Copy the file to remote host and load the catalog
+  hosts: localhost
+  vars_files:
+     - vars.yml
+  tasks:
+   - name: Create temp directory
+     file:
+       path: "/tmp/olmmirror_{{ ocp_version }}"
+       state: directory
+     tags:
+       - load
+   - name: Copy the archived file to remote host and unarchive
+     unarchive:
+       src: mirror.tgz
+       dest: "/tmp/olmmirror_{{ ocp_version }}"
+     tags:
+       - load
+   - name: Load the catalog into the mirrored registry
+     command: oc adm catalog mirror file://mirror/olm-mirror/redhat-operator-index:v4.7 {{ local_registry_name }}/olm-mirror -a auth.json
+     args:
+       chdir: "/tmp/olmmirror_{{ ocp_version }}/v2" 
+     tags:
+       - load
