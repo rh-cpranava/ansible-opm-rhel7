@@ -64,7 +64,7 @@
       tags:
         - mirror_catalog
     - name: Store the mirrored images into a file called mirror
-      command: oc adm catalog mirror {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }} file://mirror -a auth.json --skip-verification=false --insecure=true
+      command: oc adm catalog mirror {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }} file://mirror -a {{ var_credentials_file }} --skip-verification=false --insecure=true
       args:
         chdir: "{{ mirror_dest }}/mirror"
       tags:
@@ -93,7 +93,7 @@
      tags:
        - load
    - name: Load the catalog into the mirrored registry
-     command: oc adm catalog mirror file://mirror/olm-mirror/redhat-operator-index:v4.7 {{ local_registry_name }}/olm-mirror -a auth.json
+     command: "oc adm catalog mirror file://mirror/olm-mirror/redhat-operator-index:v4.7 {{ local_registry_name }}/olm-mirror -a {{ var_credentials_file }}"
      args:
        chdir: "/tmp/olmmirror_{{ ocp_version }}/v2" 
      tags:

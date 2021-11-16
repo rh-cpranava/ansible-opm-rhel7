@@ -1,4 +1,6 @@
 ---
+var_credentials_file: /root/ansible-opm-rhel7/auth.json
+mirror_dest: /root/ansible-opm-rhel7/olmmirror
 ocp_version: 4.7
 container_name: opm
 local_registry_name: upi-0.cpranavatest.lab.pnq2.cee.redhat.com:5000
