@@ -6,7 +6,7 @@
      - vars.yml
   tasks:
     - name: Unset env variable
-      shell: "unset http_proxy; unset https_proxy;"
+      command: "unset http_proxy; unset https_proxy;"
       tags:
         - prune
     - name: Run the index image
@@ -20,7 +20,7 @@
       tags:
         - prune
     - name: Copy the index database inside the container
-      shell: podman exec -it operator-index cp /database/index.db /registry/index.db 
+      command: podman exec -it operator-index cp /database/index.db /registry/index.db 
       tags:
         - prune
     - name: Prune the database
@@ -28,11 +28,11 @@
       tags:
         - prune
     - name: Copy the index database inside the container
-      shell: "podman cp operator-index:/registry/index.db ."
+      command: "podman cp operator-index:/registry/index.db ."
       tags:
         - prune
     - name: Copy the index database inside the container
-      shell: "podman cp index.db operator-index:/database/index.db"
+      command: "podman cp index.db operator-index:/database/index.db"
       tags:
         - prune
 - name: Push the index container to mirror registry
