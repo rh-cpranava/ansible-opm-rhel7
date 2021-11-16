@@ -59,20 +59,20 @@
   tasks:
     - name: Create temp directory called olmmirror
       file:
-        path: mirror/olmmirror
+        path: "{{ mirror_dest }}/mirror"
         state: directory
       tags:
         - mirror_catalog
     - name: Store the mirrored images into a file called mirror
       command: oc adm catalog mirror {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }} file://mirror -a auth.json --skip-verification=false --insecure=true
       args:
-        chdir: olmmirror/
+        chdir: "{{ mirror_dest }}/mirror"
       tags:
         - mirror_catalog
     - name: Tar the file 
       archive:
-        path: olmmirror/v2
-        dest: mirror.tgz
+        path: "{{ mirror_dest }}/mirror/v2"
+        dest: "{{ mirror_dest }}/mirror/mirror.tgz"
       tags:
         - mirror_catalog
 - name: Copy the file to remote host and load the catalog
@@ -88,7 +88,7 @@
        - load
    - name: Copy the archived file to remote host and unarchive
      unarchive:
-       src: mirror.tgz
+       src: "{{ mirror_dest }}/mirror/mirror.tgz"
        dest: "/tmp/olmmirror_{{ ocp_version }}"
      tags:
        - load
