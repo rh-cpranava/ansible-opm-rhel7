@@ -32,7 +32,7 @@
       tags:
         - prune
 - name: Push the index container to mirror registry
-  hosts: localhost
+  hosts: "{{ remote_host }}"
   become: yes
   vars_files:
      - vars.yml
