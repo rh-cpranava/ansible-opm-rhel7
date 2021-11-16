@@ -104,11 +104,11 @@
      tags:
        - catalog_mirror
    - name: Tag the image after loading it
-     command: "podman tag {{ podman_load.stdout_lines[0].split('@')[1] }} {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+     command: "podman tag {{ podman_load.stdout_lines[0].split('@')[1] }} {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
      tags:
        - catalog_mirror
    - name: Push the image to Destination Mirror Registry
-     command: "podman push {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+     command: "podman push {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
      tags:
        - catalog_mirror
    - name: Copy the archived file to remote host and unarchive
