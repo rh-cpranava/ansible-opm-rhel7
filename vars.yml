@@ -4,6 +4,7 @@ mirror_dest: /root/ansible-opm-rhel7/olmmirror
 ocp_version: 4.7
 container_name: opm
 local_registry_name: upi-0.cpranavatest.lab.pnq2.cee.redhat.com:5000
+dest_registry_name: upi-0.cpranavatest.lab.pnq2.cee.redhat.com:5000
 index_image: registry.redhat.io/redhat/redhat-operator-index
 #var_prune: cluster-logging,compliance-operator,container-security-operator,elasticsearch-operator,file-integrity-operator
 var_prune: file-integrity-operator
