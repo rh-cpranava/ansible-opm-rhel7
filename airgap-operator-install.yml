@@ -75,6 +75,8 @@
         dest: "{{ mirror_dest }}/mirror/mirror.tgz"
       tags:
         - mirror_catalog
+    - name: Save the mirror catalog image in tar file
+      command: "podman save -o {{ mirror_dest }}/index-operator.tar {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
 - name: Copy the file to remote host and load the catalog
   hosts: localhost
   vars_files:
@@ -93,8 +95,19 @@
      tags:
        - load
    - name: Load the catalog into the mirrored registry
-     command: "oc adm catalog mirror file://mirror/olm-mirror/redhat-operator-index:v4.7 {{ local_registry_name }}/olm-mirror -a {{ var_credentials_file }}"
+     command: "oc adm catalog mirror file://mirror/olm-mirror/redhat-operator-index:v4.7 {{ dest_registry_name }}/olm-mirror -a {{ var_credentials_file }}"
      args:
-       chdir: "/tmp/olmmirror_{{ ocp_version }}/v2" 
+       chdir: "/tmp/olmmirror_{{ ocp_version }}/v2"
      tags:
        - load
+   - name: Copy the catalog mirror to the mirror registry
+     copy:
+       src: "{{ mirror_dest }}/index-operator.tar"
+       dest: "/tmp/"
+     tags:
+       - load
+   - name: Load the podman image to the disconnected mirror registry
+     command: podman load -i /tmp/index-operator.tar
+     register: podman_index_load
+   - name: Push the index operator to the mirror registry
+     command: "podman push {{ podman_index_load. }}"
