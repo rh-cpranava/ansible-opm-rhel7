@@ -15,6 +15,8 @@
         ports:
            - "50051:50051"
         detach: yes
+      tags:
+        - prune
     - name: Copy the index database inside the container
       shell: podman exec -it operator-index cp /database/index.db /registry/index.db 
       tags:
