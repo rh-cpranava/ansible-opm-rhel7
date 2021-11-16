@@ -51,6 +51,10 @@
       command: "podman push {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
       tags:
         - push
+    - name: Save the mirror registry to output
+      command: "podman save -o {{ mirror_dest }}/index-operator.tar --format=oci-archive {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+      tags:
+        - push
 - name: Mirror the catalog into the disk
   hosts: localhost
   vars_files:
@@ -85,16 +89,29 @@
        path: "/tmp/olmmirror_{{ ocp_version }}"
        state: directory
      tags:
-       - load
+       - catalog_mirror
+   - name: Load the index-operator into registry
+     command: "podman load -i index.tar"
+     register: register_podman_load_index
+     tags:
+       - catalog_mirror
+   - name: Tag the image after loading it
+     command: "podman tag {{ podman_load.stdout_lines[0].split('@')[1] }} {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+     tags:
+       - catalog_mirror
+   - name: Push the image to Destination Mirror Registry
+     command: "podman push {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+     tags:
+       - catalog_mirror
    - name: Copy the archived file to remote host and unarchive
      unarchive:
        src: "{{ mirror_dest }}/mirror/mirror.tgz"
        dest: "/tmp/olmmirror_{{ ocp_version }}"
      tags:
-       - load
+       - catalog_mirror
    - name: Load the catalog into the mirrored registry
      command: "oc adm catalog mirror file://mirror/olm-mirror/redhat-operator-index:v4.7 {{ local_registry_name }}/olm-mirror -a {{ var_credentials_file }}"
      args:
        chdir: "/tmp/olmmirror_{{ ocp_version }}/v2" 
      tags:
-       - load
+       - catalog_mirror
