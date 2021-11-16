@@ -81,6 +81,8 @@
         - mirror_catalog
     - name: Save the mirror catalog image in tar file
       command: "podman save -o {{ mirror_dest }}/index-operator.tar {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+      tags:
+       - catalog_mirror
 - name: Copy the file to remote host and load the catalog
   hosts: "{{ remote_host }}"
   vars_files:
