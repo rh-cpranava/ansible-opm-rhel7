@@ -6,7 +6,11 @@
      - vars.yml
   tasks:
     - name: Unset env variable
-      command: "unset http_proxy; unset https_proxy;"
+      shell: "unset http_proxy; unset https_proxy;"
+      tags:
+        - prune
+    - name: Log into mirror registry
+      shell: "podman login {{ local_registry_name }} -u {{ local_registry_username }} -p {{ local_registry_password }}"
       tags:
         - prune
     - name: Run the index image
@@ -56,7 +60,7 @@
       tags:
         - push
     - name: Save the mirror registry to output
-      command: "podman save -o {{ mirror_dest }}/index-operator.tar --format=oci-archive {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+      command: "podman save --format oci-archive -o {{ mirror_dest }}/index-operator.tar {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
       tags:
         - push
 - name: Mirror the catalog into the disk
@@ -83,10 +87,6 @@
         dest: "{{ mirror_dest }}/mirror/mirror.tgz"
       tags:
         - store_mirror_catalog
-    - name: Save the mirror catalog image in tar file
-      command: "podman save -o {{ mirror_dest }}/index-operator.tar {{ local_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
-      tags:
-       - store_mirror_catalog
 - name: Copy the file to remote host and load the catalog
   hosts: "{{ remote_host }}"
   vars_files:
@@ -109,10 +109,17 @@
      register: register_podman_load_index
      tags:
        - mirror_push
-   - name: Tag the image after loading it
-     command: "podman tag {{ podman_load.stdout_lines[0].split('@')[1] }} {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+   - debug: msg="{{ register_podman_load_index }}"
      tags:
        - mirror_push
+   - name: Tag the image after loading it
+     command: "podman tag {{ register_podman_load_index.stdout_lines[-1].split(' ')[-1] }} {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
+     tags:
+       - mirror_push
+   - name: Log into mirror registry
+     shell: "podman login {{ dest_registry_name }} -u {{ dest_registry_username }} -p {{ dest_registry_password }}"
+     tags:
+       - mirror_push 
    - name: Push the image to Destination Mirror Registry
      command: "podman push {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v{{ ocp_version }}"
      tags:
