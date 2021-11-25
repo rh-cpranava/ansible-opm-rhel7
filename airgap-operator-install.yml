@@ -130,9 +130,9 @@
        dest: "/tmp/olmmirror_{{ ocp_version }}"
      tags:
        - mirror_push
-   - name: Load the catalog into the mirrored registry
-     command: "oc adm catalog mirror {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v4.7 {{ dest_registry_name }}/olm-mirror -a {{ var_credentials_file }}"
-     args:
-       chdir: "/tmp/olmmirror_{{ ocp_version }}/v2"
-     tags:
-       - mirror_push
+   #- name: Load the catalog into the mirrored registry
+   #  command: "oc adm catalog mirror {{ dest_registry_name }}/olm-mirror/redhat-operator-index:v4.7 {{ dest_registry_name }}/olm-mirror -a {{ var_credentials_file }}"
+   #  args:
+   #    chdir: "/tmp/olmmirror_{{ ocp_version }}/v2"
+   #  tags:
+   #    - mirror_push
